@@ -184,8 +184,9 @@ void textcolor(int color_number)
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color_number);
 }
 
-void gotoxy_system(int x, int y)
+void gotoxy_system(int x_1, int y)
 {
+	int x = x_1 + 1;
 	COORD pos = { SPACE * x, y };
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 	if ((x < 0) || (y < 0))
@@ -194,8 +195,9 @@ void gotoxy_system(int x, int y)
 	}
 }
 
-void gotoxy(int x, int y)
+void gotoxy(int x_1, int y)
 {
+	int x = x_1 + 1;
 	COORD pos = { SPACE * x, y };
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 	if ((x < 1) || (y < 1) || (x > WIDTH - 1) || (y > HEIGHT - 1))	// 벽에 충돌 하는 경우
