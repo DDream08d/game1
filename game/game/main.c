@@ -16,12 +16,21 @@
 #define SYSTEM_X	5			//for system msg output
 #define SYSTEM_Y	HEIGHT+5
 
+#define	DIE			-1
+#define EMPTY		0	// * 공간 : " ", color : 
+#define ME			1	// * 나 : ●, color : 14, 
+#define ENEMY		2	// * 적 : ○, color : 15, 
+#define SCORING		3	//
+#define WALL		9	// * 벽: ▣, color : 10,
+
+#define MAX_ENEMY	3
+
 /* Structures -------------------------------------------------------- */
 enum STAT
 {
-	DEAD,	//0
-	ALIVE,	//1
-	EATING	//2
+	DEAD,		//0
+	ALIVE=1,	//1
+	EATING		//2
 };
 
 struct location
@@ -31,6 +40,10 @@ struct location
 
 static int is_Pushed = 0;
 static int is_Pushed_pre = 0;
+
+static int gaming_field[WIDTH][HEIGHT];
+
+static int no_of_enemys = 0;
 
 /* Function List ----------------------------------------------------- */
 void init_system();
@@ -45,15 +58,19 @@ char get_Key();
 void move_my_location(char key);
 void init_my_position();
 void init_timer();
-void eney_spotted();
-
+void enemy_spotted();
+void init_field();
+void draw_me();
+void draw_wall();
+void draw_scoring();
 
 /* Main function ----------------------------------------------------- */
 int main()
 {
 	init_system();
+	//TODO: 빈 화면에 키 설명 -> press any key -> 본격 시작.
 
-	draw_field();
+	init_field();
 
 	init_my_position();
 	init_timer();
@@ -66,12 +83,25 @@ int main()
 	{
 		is_Pushed_pre = is_Pushed;
 		is_Pushed = _kbhit();
+
 		if (is_Pushed == TRUE)
 		{
 			if (is_Pushed_pre == FALSE)
 			{
 				key = get_Key();
-				eney_spotted();
+
+				// field에서 no. of enemy를 체크하는 방법이 있음.
+				// enemy_sppotted가 실행 될 때 마다 cnt 하는 방법도 있음.(단, field 값이 변경된다면, 매번 반영 되어야 함.)
+				if (no_of_enemys <= MAX_ENEMY)
+				{
+					enemy_spotted();	//TODO: enemy가 없다면. enemy spotted실행되도록 하자.
+					no_of_enemys++;
+				}
+				else
+				{
+					// do nothing
+				}
+
 				move_my_location(key); //-> move my location 으로 이동. my location 의 status가 alive 인경우 ㅇ dead -> ※, † 1초 간격으로 그 다음에 you die
 			}
 			else
@@ -86,6 +116,9 @@ int main()
 
 		gotoxy_system(3, HEIGHT + 2);		// 입력 중인 키값 출력
 		printf("input key : %d", key);
+
+		gotoxy_system(3, HEIGHT + 3);		// 입력 중인 키값 출력
+		printf("enemys : %d", no_of_enemys);
 
 		my_pre = my;
 		print_playtime();
@@ -162,11 +195,9 @@ void init_my_position()
 	my.x = 1;
 	my.y = 1;
 	my.status = ALIVE;
-
 	gotoxy(1, 1);
-	textcolor(14);
-	printf("●");
-	textcolor(15);
+	draw_me();
+	gaming_field[my.x][my.y] = ME;
 }
 
 void init_timer()
@@ -184,9 +215,8 @@ void textcolor(int color_number)
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color_number);
 }
 
-void gotoxy_system(int x_1, int y)
+void gotoxy_system(int x, int y)
 {
-	int x = x_1 + 1;
 	COORD pos = { SPACE * x, y };
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 	if ((x < 0) || (y < 0))
@@ -195,9 +225,8 @@ void gotoxy_system(int x_1, int y)
 	}
 }
 
-void gotoxy(int x_1, int y)
+void gotoxy(int x, int y)
 {
-	int x = x_1 + 1;
 	COORD pos = { SPACE * x, y };
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 	if ((x < 1) || (y < 1) || (x > WIDTH - 1) || (y > HEIGHT - 1))	// 벽에 충돌 하는 경우
@@ -206,32 +235,8 @@ void gotoxy(int x_1, int y)
 		my = my_pre;
 		gotoxy(my.x, my.y);
 		my.status = DEAD;
-	}
-}
 
-void draw_field()	// field range -> 1 ~ HEIGHT/WIDTH
-{
-	int i, j;
-	textcolor(10);
-	for (i = 0; i < WIDTH + 1; i++)
-	{
-		for (j = 0; j < HEIGHT + 1; j++)
-		{
-			gotoxy_system(i, j);
-			printf("▣");
-		}
 	}
-
-	for (i = 1; i < WIDTH; i++)
-	{
-		for (j = 1; j < HEIGHT; j++)
-		{
-			gotoxy_system(i, j);
-			printf("  ");
-		}
-	}
-	textcolor(15);
-	printf("\n");
 }
 
 char get_Key()
@@ -243,25 +248,54 @@ char get_Key()
 
 void move_my_location(char key)
 {
+	my.status = ALIVE;
 	switch (key)	// 입력 키값에 따라 전에 기록된 값을 지우고 좌표값 변환.
-	{
+	{				// is enemy? true -> false -> 이동
 	case 'a':
 		gotoxy(my.x, my.y);
+		gaming_field[my.x][my.y] = EMPTY;
+
+		if (gaming_field[my.x-1][my.y] == ENEMY)
+		{
+			my.status=EATING;
+		}
+
 		printf("  ");
 		my.x--;
 		break;
 	case 's':
 		gotoxy(my.x, my.y);
+		gaming_field[my.x][my.y] = EMPTY;
+
+		if (gaming_field[my.x][my.y+1] == ENEMY)
+		{
+			my.status = EATING;
+		}
+
 		printf("  ");
 		my.y++;
 		break;
 	case 'd':
 		gotoxy(my.x, my.y);
+		gaming_field[my.x][my.y] = EMPTY;
+
+		if (gaming_field[my.x+1][my.y] == ENEMY)
+		{
+			my.status = EATING;
+		}
+
 		printf("  ");
 		my.x++;
 		break;
 	case 'w':
 		gotoxy(my.x, my.y);
+		gaming_field[my.x][my.y] = EMPTY;
+
+		if (gaming_field[my.x][my.y-1] == ENEMY)
+		{
+			my.status = EATING;
+		}
+
 		printf("  ");
 		my.y--;
 		break;
@@ -270,27 +304,30 @@ void move_my_location(char key)
 	gotoxy(my.x, my.y);
 	if (my.status == ALIVE)	//나중에 print status로 묶어 버리자.
 	{
-		textcolor(14);
-		printf("●");
-		textcolor(15);
+		draw_me();
+		gaming_field[my.x][my.y] = ME;
 	}
 	else if (my.status == EATING)
 	{
-		printf("☆");
+		draw_scoring();
+		gaming_field[my.x][my.y] = SCORING;
+		no_of_enemys--;
 	}
 	else if (my.status == DEAD)
 	{
 		printf("†");
+		gaming_field[my.x][my.y] = DIE;
 	}
 }	// game 의 한 togle은 버튼 누르는 걸 기준으로. 
 
-void eney_spotted()
+void enemy_spotted()
 {
 	enemy.x = rand() % (WIDTH - 2) + 1;
 	enemy.y = rand() % (HEIGHT - 2) + 1;
 
 	gotoxy(enemy.x, enemy.y);
 	printf("○");	// 각 좌표들을 배열로 선언한 다음에, is occupied 혹은 empty 0, 나 1, 적 2, 벽 9 로 지정해야 겠다.
+	gaming_field[enemy.x][enemy.y] = ENEMY;
 
 }
 
@@ -306,4 +343,43 @@ void print_playtime()
 	{
 		// do nothing
 	}
+}
+void init_field()
+{
+	for (int j = 0; j < HEIGHT+1; j++)
+	{
+		for (int i = 0; i < WIDTH+1; i++)
+		{
+			if ((i == 0) || (j == 0) || (i == WIDTH) || (j == HEIGHT))
+			{
+				gaming_field[j][i] = WALL;	//9 
+				gotoxy_system(i, j);
+				draw_wall();
+			}
+			else
+			{
+				gaming_field[j][i] = EMPTY;	//0
+			}
+		}
+	}
+}
+void draw_me()
+{
+	textcolor(14);
+	printf("⊙");
+	textcolor(15);
+}
+
+void draw_wall()
+{
+	textcolor(10);
+	printf("▣");
+	textcolor(15);
+}
+
+void draw_scoring()
+{
+	textcolor(9);
+	printf("●");
+	textcolor(15);
 }
