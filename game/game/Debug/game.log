@@ -1,5 +1,5 @@
 ﻿  main.c
-D:\SandBox\01_game1\game1\game\game\main.c(109,15): warning C4047: '=': 'char'의 간접 참조 수준이 'void *'과(와) 다릅니다.
-D:\SandBox\01_game1\game1\game\game\main.c(114,14): warning C4047: '=': 'char'의 간접 참조 수준이 'void *'과(와) 다릅니다.
-D:\SandBox\01_game1\game1\game\game\main.c(79,1): warning C4047: '초기화 중': 'char'의 간접 참조 수준이 'void *'과(와) 다릅니다.
+D:\SandBox\01_game1\game1\game\game\main.c(118,15): warning C4047: '=': 'char'의 간접 참조 수준이 'void *'과(와) 다릅니다.
+D:\SandBox\01_game1\game1\game\game\main.c(123,14): warning C4047: '=': 'char'의 간접 참조 수준이 'void *'과(와) 다릅니다.
+D:\SandBox\01_game1\game1\game\game\main.c(84,1): warning C4047: '초기화 중': 'char'의 간접 참조 수준이 'void *'과(와) 다릅니다.
   game.vcxproj -> D:\SandBox\01_game1\game1\game\Debug\game.exe
